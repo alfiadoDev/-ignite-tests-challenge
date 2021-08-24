@@ -21,7 +21,7 @@ describe('Create User', () => {
     expect(response).toHaveProperty('id');
   })
 
-  it('Should be able to create a new user', async ()=> {
+  it('Should not be able to create a new user', async ()=> {
     const user = {
       email: 'teste@teste.com',
       name: 'test',
