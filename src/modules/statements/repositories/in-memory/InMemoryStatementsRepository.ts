@@ -10,7 +10,10 @@ export class InMemoryStatementsRepository implements IStatementsRepository {
   async create(data: ICreateStatementDTO): Promise<Statement> {
     const statement = new Statement();
 
-    Object.assign(statement, data);
+    Object.assign(statement, data, {
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
 
     this.statements.push(statement);
 
@@ -29,23 +32,29 @@ export class InMemoryStatementsRepository implements IStatementsRepository {
       { balance: number } | { balance: number, statement: Statement[] }
     >
   {
-    const statement = this.statements.filter(operation => operation.user_id === user_id);
+    const statement = this.statements.filter(
+      (operation) =>
+        operation.user_id === user_id || operation.receiver_id === user_id
+    );
 
     const balance = statement.reduce((acc, operation) => {
-      if (operation.type === 'deposit') {
-        return acc + operation.amount;
-      } else {
-        return acc - operation.amount;
-      }
-    }, 0)
+      if (operation.type === "transfer")
+        return operation.user_id === user_id
+          ? acc - operation.amount
+          : acc + operation.amount;
+
+      return operation.type === "deposit"
+        ? acc + operation.amount
+        : acc - operation.amount;
+    }, 0);
 
     if (with_statement) {
       return {
         statement,
-        balance
-      }
+        balance,
+      };
     }
 
-    return { balance }
+    return { balance };
   }
 }

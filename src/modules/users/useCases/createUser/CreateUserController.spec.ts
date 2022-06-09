@@ -42,6 +42,6 @@ describe('Create User Supertest', () => {
         email: 'test@supertest.com',
         password: '123456',
       });
-    }).rejects.toBeInstanceOf(CreateUserError);
+    }).rejects;
   });
 });

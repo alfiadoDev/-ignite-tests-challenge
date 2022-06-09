@@ -6,6 +6,11 @@ import { IGetBalanceDTO } from "../useCases/getBalance/IGetBalanceDTO";
 import { IGetStatementOperationDTO } from "../useCases/getStatementOperation/IGetStatementOperationDTO";
 import { IStatementsRepository } from "./IStatementsRepository";
 
+export type IStatementDTO = Pick<
+  Statement,
+  "user_id" | "receiver_id" | "description" | "amount" | "type"
+>;
+
 export class StatementsRepository implements IStatementsRepository {
   private repository: Repository<Statement>;
 
@@ -15,12 +20,14 @@ export class StatementsRepository implements IStatementsRepository {
 
   async create({
     user_id,
+    receiver_id,
     amount,
     description,
     type
-  }: ICreateStatementDTO): Promise<Statement> {
+  }: IStatementDTO): Promise<Statement> {
     const statement = this.repository.create({
       user_id,
+      receiver_id,
       amount,
       description,
       type
@@ -41,24 +48,30 @@ export class StatementsRepository implements IStatementsRepository {
     >
   {
     const statement = await this.repository.find({
-      where: { user_id }
+      where: [{ user_id: user_id }, { receiver_id: user_id }],
     });
 
     const balance = statement.reduce((acc, operation) => {
-      if (operation.type === 'deposit') {
-        return acc + operation.amount;
-      } else {
-        return acc - operation.amount;
-      }
-    }, 0)
+
+      if (operation.type === "transfer")
+        return operation.user_id === user_id
+          ? acc - Number(operation.amount)
+          : acc + Number(operation.amount);
+
+      return operation.type === "deposit"
+        ? acc + Number(operation.amount)
+        : acc - Number(operation.amount);
+    }, 0);
+
+
 
     if (with_statement) {
       return {
         statement,
-        balance
-      }
+        balance,
+      };
     }
 
-    return { balance }
+    return { balance };
   }
 }
